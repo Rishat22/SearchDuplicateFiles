@@ -13,3 +13,7 @@ size is referred to as `S` in the task
 * one of the available hashing algorithms (crc32, md5 -
 determine the specific options yourself), in the task
 this function is referred to as `H`
+
+Each file can be represented as a list of blocks of size `S`. 
+If the file size is not a multiple, it is supplemented with binary
+zeros. Each block must be collapsed by the selected hashing function `H`.
