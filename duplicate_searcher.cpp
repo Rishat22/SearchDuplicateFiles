@@ -15,6 +15,10 @@ bool DuplicateSearcher::scan()
 	try {
 		if(m_ScanDirs.empty())
 			throw ScanDirException();
+//		for(const auto& scan_dir : m_ScanDirs)
+//		{
+
+//		}
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
@@ -74,7 +78,11 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 		if (variables_map.count("help"))
 			std::cout << description << '\n';
 		else if (variables_map.count("dirs"))
-			std::cout << "readfrom: " << variables_map["dirs"].as<std::string>() << std::endl;
+		{
+			for(const auto& dir : variables_map["dirs"].as<std::vector<std::string>>())
+				std::cout << dir << ", ";
+			std::cout << std::endl;
+		}
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;

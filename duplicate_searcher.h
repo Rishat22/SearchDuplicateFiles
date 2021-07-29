@@ -1,7 +1,10 @@
 #ifndef DUPLICATESEARCHER_H
 #define DUPLICATESEARCHER_H
+#include "boost/filesystem.hpp"
 #include <vector>
 #include <string>
+
+namespace fs = boost::filesystem;
 
 class DuplicateSearcher
 {
@@ -12,8 +15,8 @@ public:
     void addScanExcludeDir(const std::string& scan_exclude_dir);
     void setParamsFromCmdLineArgs(int argc, const char *argv[]);
 private:
-    std::vector<std::string> m_ScanDirs;
-    std::vector<std::string> m_ScanExludeDirs;
+    std::vector<fs::path> m_ScanDirs;
+    std::vector<fs::path> m_ScanExludeDirs;
 
 };
 

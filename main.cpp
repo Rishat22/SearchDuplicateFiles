@@ -13,5 +13,6 @@ int main(int argc, const char *argv[])
 {
 	DuplicateSearcher duplicate_searcher;
 	duplicate_searcher.setParamsFromCmdLineArgs(argc, argv);
-	duplicate_searcher.scan();
+	if(duplicate_searcher.scan())
+		return 1;
 }
