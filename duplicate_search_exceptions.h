@@ -11,4 +11,12 @@ struct ScanDirException : public std::exception
     }
 };
 
+struct NoDuplicatesException : public std::exception
+{
+        const char* what () const throw ()
+    {
+        return "There are no duplicates in the specified directories";
+    }
+};
+
 #endif // DUPLICATE_SEARCH_EXCEPTIONS_H
