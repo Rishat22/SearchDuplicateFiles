@@ -15,16 +15,59 @@ bool DuplicateSearcher::scan()
 	try {
 		if(m_ScanDirs.empty())
 			throw ScanDirException();
-//		for(const auto& scan_dir : m_ScanDirs)
-//		{
-
-//		}
+		for(const auto& scan_dir : m_ScanDirs)
+		{
+			FindDuplicate(scan_dir);
+		}
+		if(m_DuplicateFiles.empty())
+			throw NoDuplicatesException();
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
 		return false;
 	}
 	return true;
+}
+
+void DuplicateSearcher::FindDuplicate( const fs::path& dir_path )
+{
+	fs::directory_iterator end_itr;
+	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
+	{
+	  if( is_directory(itr->status()) )
+	  {
+		FindDuplicate( itr->path() );
+	  }
+	  else
+	  {
+		  std::vector<fs::path> duplicate_files;
+		  FindDuplicate( dir_path, itr->path(), duplicate_files );
+		  if( !duplicate_files.empty() )
+		  {
+			  duplicate_files.push_back(itr->path());
+			  m_DuplicateFiles.emplace_back(duplicate_files);
+		  }
+	  }
+	}
+}
+void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
+									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
+{
+  if( !exists( dir_path ) )
+	  return;
+  const auto search_file_size = fs::file_size( search_file_path );
+  fs::directory_iterator end_itr;
+  for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
+  {
+	if( is_directory(itr->status()) )
+	{
+	  FindDuplicate( itr->path(), search_file_path, duplicate_files );
+	}
+	else if( fs::file_size( itr->path() ) == search_file_size && itr->path() != search_file_path)
+	{
+		duplicate_files.push_back(itr->path());
+	}
+  }
 }
 
 void DuplicateSearcher::addScanDir(const std::string& scan_dir)
@@ -77,14 +120,13 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 
 		if (variables_map.count("help"))
 			std::cout << description << '\n';
-		else if (variables_map.count("dirs"))
-		{
-			for(const auto& dir : variables_map["dirs"].as<std::vector<std::string>>())
-				std::cout << dir << ", ";
-			std::cout << std::endl;
-		}
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
 	}
+}
+
+std::vector<std::vector<fs::path> > DuplicateSearcher::duplicateFiles() const
+{
+	return m_DuplicateFiles;
 }

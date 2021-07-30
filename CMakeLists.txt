@@ -6,7 +6,7 @@ else()
     project(SearchDuplicateFiles)
 endif()
 
-find_package(Boost COMPONENTS program_options unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS program_options filesystem unit_test_framework REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 set(CMAKE_CXX_STANDARD 14)
