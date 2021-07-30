@@ -17,7 +17,21 @@ bool DuplicateSearcher::scan()
 			throw ScanDirException();
 		for(const auto& scan_dir : m_ScanDirs)
 		{
-			FindDuplicate(scan_dir);
+			GetAllScanFiles(scan_dir, m_AllScanFiles);
+			for(auto& file : m_AllScanFiles)
+			{
+				if(file.second == false)
+				{
+					std::vector<fs::path> duplicate_files;
+					FindDuplicate( scan_dir, file.first, duplicate_files );
+					if( !duplicate_files.empty() )
+					{
+						file.second = true;
+						duplicate_files.push_back(file.first);
+						m_DuplicateFiles.emplace_back(duplicate_files);
+					}
+				}
+			}
 		}
 		if(m_DuplicateFiles.empty())
 			throw NoDuplicatesException();
@@ -29,24 +43,18 @@ bool DuplicateSearcher::scan()
 	return true;
 }
 
-void DuplicateSearcher::FindDuplicate( const fs::path& dir_path )
+void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files)
 {
 	fs::directory_iterator end_itr;
 	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
 	{
 	  if( is_directory(itr->status()) )
 	  {
-		FindDuplicate( itr->path() );
+		GetAllScanFiles( itr->path(), all_scan_files );
 	  }
 	  else
 	  {
-		  std::vector<fs::path> duplicate_files;
-		  FindDuplicate( dir_path, itr->path(), duplicate_files );
-		  if( !duplicate_files.empty() )
-		  {
-			  duplicate_files.push_back(itr->path());
-			  m_DuplicateFiles.emplace_back(duplicate_files);
-		  }
+		  all_scan_files[itr->path().c_str()] = false;
 	  }
 	}
 }
@@ -63,9 +71,15 @@ void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
 	{
 	  FindDuplicate( itr->path(), search_file_path, duplicate_files );
 	}
-	else if( fs::file_size( itr->path() ) == search_file_size && itr->path() != search_file_path)
+	else
 	{
+		const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
+		if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
+			continue;
+		if( itr->path() == search_file_path || fs::file_size( itr->path() ) != search_file_size )
+			continue;
 		duplicate_files.push_back(itr->path());
+		cur_scan_file->second = true;
 	}
   }
 }
