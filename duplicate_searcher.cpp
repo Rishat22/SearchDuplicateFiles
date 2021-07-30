@@ -45,12 +45,17 @@ bool DuplicateSearcher::scan()
 
 void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files)
 {
+	size_t curr_scan_level = 0;
 	fs::directory_iterator end_itr;
 	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
 	{
 	  if( is_directory(itr->status()) )
 	  {
-		GetAllScanFiles( itr->path(), all_scan_files );
+		  if(curr_scan_level++ >= m_ScanLevel)
+			  continue;
+		  if(std::find(m_ExludeScanDirs.begin(), m_ExludeScanDirs.end(), itr->path()) != m_ExludeScanDirs.end())
+			  continue;
+		  GetAllScanFiles( itr->path(), all_scan_files );
 	  }
 	  else
 	  {
@@ -61,27 +66,35 @@ void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordere
 void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
 									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
 {
-  if( !exists( dir_path ) )
-	  return;
-  const auto search_file_size = fs::file_size( search_file_path );
-  fs::directory_iterator end_itr;
-  for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
-  {
-	if( is_directory(itr->status()) )
+	if( !exists( dir_path ) )
+		return;
+	size_t curr_scan_level = 0;
+	const auto search_file_size = fs::file_size( search_file_path );
+	fs::directory_iterator end_itr;
+	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
 	{
-	  FindDuplicate( itr->path(), search_file_path, duplicate_files );
+		const auto& cur_path = itr->path();
+		if( is_directory(itr->status()) )
+		{
+			if(curr_scan_level++ >= m_ScanLevel)
+				continue;
+			if(std::find(m_ExludeScanDirs.begin(), m_ExludeScanDirs.end(), itr->path()) != m_ExludeScanDirs.end())
+				continue;
+			FindDuplicate( cur_path, search_file_path, duplicate_files );
+		}
+		else
+		{
+			const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
+			if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
+				continue;
+			if( fs::file_size( itr->path() ) != search_file_size )
+				continue;
+			if( itr->path() == search_file_path )
+				continue;
+			duplicate_files.push_back(itr->path());
+			cur_scan_file->second = true;
+		}
 	}
-	else
-	{
-		const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
-		if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
-			continue;
-		if( itr->path() == search_file_path || fs::file_size( itr->path() ) != search_file_size )
-			continue;
-		duplicate_files.push_back(itr->path());
-		cur_scan_file->second = true;
-	}
-  }
 }
 
 void DuplicateSearcher::addScanDir(const std::string& scan_dir)
@@ -89,9 +102,14 @@ void DuplicateSearcher::addScanDir(const std::string& scan_dir)
 	m_ScanDirs.push_back(scan_dir);
 }
 
-void DuplicateSearcher::addScanExcludeDir(const std::string& scan_exclude_dir)
+void DuplicateSearcher::addExcludeScanDir(const std::string& scan_exclude_dir)
 {
-	m_ScanExludeDirs.push_back(scan_exclude_dir);
+	m_ExludeScanDirs.push_back(scan_exclude_dir);
+}
+
+void DuplicateSearcher::setScanLevel(const size_t scan_level)
+{
+	m_ScanLevel = scan_level;
 }
 
 void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
@@ -111,11 +129,14 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 					 [this](const std::vector<std::string>& scan_exclude_dirs)
 				{
 				 for(const auto& dir : scan_exclude_dirs)
-					 this->addScanExcludeDir(dir);
+					 this->addExcludeScanDir(dir);
 				}), "Directories to exclude from scanning (there may be several)")
 
-				("scan-level,l",  po::value<size_t>()->default_value(0),
-				 "Scan level (one for all directories, 0 - only the specified directory)")
+				("scan-level,l",  po::value<size_t>()->default_value(0)->notifier(
+					 [this](const size_t scan_level)
+				{
+				 this->setScanLevel(scan_level);
+				}), "Scan level (one for all directories, 0 - only the specified directory)")
 
 				("min-file-size,s",  po::value<size_t>()->default_value(1),
 				 "Min file size, by default, all files larger than 1 byte are checked")
