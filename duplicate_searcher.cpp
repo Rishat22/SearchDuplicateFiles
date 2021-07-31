@@ -22,14 +22,19 @@ bool DuplicateSearcher::scan()
 			{
 				if(file.second == false)
 				{
+					file.second = true;
 					std::vector<fs::path> duplicate_files;
 					FindDuplicate( scan_dir, file.first, duplicate_files );
-					if( !duplicate_files.empty() )
+					if( duplicate_files.empty() )
 					{
-						file.second = true;
+						file.second = false;
+					}
+					else
+					{
 						duplicate_files.push_back(file.first);
 						m_DuplicateFiles.emplace_back(duplicate_files);
 					}
+
 				}
 			}
 		}
@@ -59,6 +64,8 @@ void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordere
 	  }
 	  else
 	  {
+		  if( fs::file_size( itr->path() ) <= m_MinFileSize )
+			  continue;
 		  all_scan_files[itr->path().c_str()] = false;
 	  }
 	}
@@ -87,9 +94,8 @@ void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
 			const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
 			if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
 				continue;
-			if( fs::file_size( itr->path() ) != search_file_size )
-				continue;
-			if( itr->path() == search_file_path )
+			const auto cur_file_size = fs::file_size( itr->path() );
+			if( cur_file_size <= m_MinFileSize || cur_file_size != search_file_size )
 				continue;
 			duplicate_files.push_back(itr->path());
 			cur_scan_file->second = true;
@@ -110,6 +116,11 @@ void DuplicateSearcher::addExcludeScanDir(const std::string& scan_exclude_dir)
 void DuplicateSearcher::setScanLevel(const size_t scan_level)
 {
 	m_ScanLevel = scan_level;
+}
+
+void DuplicateSearcher::setMinFileSize(const size_t min_file_size)
+{
+	m_MinFileSize = min_file_size;
 }
 
 void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
@@ -138,8 +149,11 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 				 this->setScanLevel(scan_level);
 				}), "Scan level (one for all directories, 0 - only the specified directory)")
 
-				("min-file-size,s",  po::value<size_t>()->default_value(1),
-				 "Min file size, by default, all files larger than 1 byte are checked")
+				("min-file-size,s",  po::value<size_t>()->default_value(1)->notifier(
+					 [this](const size_t min_file_size)
+				{
+				 this->setMinFileSize(min_file_size);
+				}), "Min file size, by default, all files larger than 1 byte are checked")
 
 				("file-masks,m", "Masks of file names allowed for comparison (case-independent)")
 

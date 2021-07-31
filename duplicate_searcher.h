@@ -15,6 +15,7 @@ public:
     void addScanDir(const std::string& scan_dir);
     void addExcludeScanDir(const std::string& scan_exclude_dir);
     void setScanLevel(const size_t scan_level);
+    void setMinFileSize(const size_t min_file_size);
     void setParamsFromCmdLineArgs(int argc, const char *argv[]);
     std::vector<std::vector<fs::path> > duplicateFiles() const;
 private:
@@ -28,6 +29,7 @@ private:
     std::vector<std::vector<fs::path>> m_DuplicateFiles;
     std::unordered_map<std::string, bool> m_AllScanFiles;
     size_t m_ScanLevel;
+    size_t m_MinFileSize;
 
 };
 
