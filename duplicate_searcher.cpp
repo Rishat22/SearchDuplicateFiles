@@ -17,19 +17,15 @@ bool DuplicateSearcher::scan()
 			throw ScanDirException();
 		for(const auto& scan_dir : m_ScanDirs)
 		{
-			GetAllScanFiles(scan_dir, m_AllScanFiles);
+			getAllScanFiles(scan_dir, m_AllScanFiles);
 			for(auto& file : m_AllScanFiles)
 			{
 				if(file.second == false)
 				{
 					file.second = true;
 					std::vector<fs::path> duplicate_files;
-					FindDuplicate( scan_dir, file.first, duplicate_files );
-					if( duplicate_files.empty() )
-					{
-						file.second = false;
-					}
-					else
+					findDuplicate( scan_dir, file.first, duplicate_files );
+					if( !duplicate_files.empty() )
 					{
 						duplicate_files.push_back(file.first);
 						m_DuplicateFiles.emplace_back(duplicate_files);
@@ -48,7 +44,7 @@ bool DuplicateSearcher::scan()
 	return true;
 }
 
-void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files)
+void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files)
 {
 	size_t curr_scan_level = 0;
 	fs::directory_iterator end_itr;
@@ -60,7 +56,7 @@ void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordere
 			  continue;
 		  if(std::find(m_ExludeScanDirs.begin(), m_ExludeScanDirs.end(), itr->path()) != m_ExludeScanDirs.end())
 			  continue;
-		  GetAllScanFiles( itr->path(), all_scan_files );
+		  getAllScanFiles( itr->path(), all_scan_files );
 	  }
 	  else
 	  {
@@ -70,7 +66,7 @@ void DuplicateSearcher::GetAllScanFiles(const fs::path & dir_path, std::unordere
 	  }
 	}
 }
-void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
+void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
 									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
 {
 	if( !exists( dir_path ) )
@@ -87,7 +83,7 @@ void DuplicateSearcher::FindDuplicate( const fs::path& dir_path,
 				continue;
 			if(std::find(m_ExludeScanDirs.begin(), m_ExludeScanDirs.end(), itr->path()) != m_ExludeScanDirs.end())
 				continue;
-			FindDuplicate( cur_path, search_file_path, duplicate_files );
+			findDuplicate( cur_path, search_file_path, duplicate_files );
 		}
 		else
 		{
