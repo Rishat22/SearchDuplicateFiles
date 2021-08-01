@@ -5,7 +5,7 @@
 
 using boost::uuids::detail::md5;
 
-class MD5FileComparator : IFileComparator
+class MD5FileComparator : public IFileComparator
 {
 public:
     bool operator()(const fs::path& first_file,

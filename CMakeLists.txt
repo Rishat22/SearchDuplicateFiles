@@ -14,6 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(project_sources
     duplicate_searcher.cpp
+    FileComparators/md5_file_comparator.cpp
+    FileComparators/crc32_file_comparator.cpp
     main.cpp
     )
 

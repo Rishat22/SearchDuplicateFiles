@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unordered_set>
-#include "crc32_hash_function.h"
+#include "crc32_file_comparator.h"
 
 using FileHash = std::unordered_set<std::string, CRC32HashFunction>;
 

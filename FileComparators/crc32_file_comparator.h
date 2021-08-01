@@ -3,7 +3,7 @@
 #include <boost/crc.hpp>
 #include "ifile_comparator.h"
 
-class CRC32FileComparator : IFileComparator
+class CRC32FileComparator : public IFileComparator
 {
 public:
     bool operator()(const fs::path& first_file,

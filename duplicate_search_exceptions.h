@@ -19,4 +19,12 @@ struct NoDuplicatesException : public std::exception
     }
 };
 
+struct NoHashAlgorithmException : public std::exception
+{
+    const char* what () const throw ()
+    {
+        return "The hash algorithm for working with files is not specified.";
+    }
+};
+
 #endif // DUPLICATE_SEARCH_EXCEPTIONS_H

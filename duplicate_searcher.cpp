@@ -1,5 +1,7 @@
 #include <iostream>
 #include <boost/program_options.hpp>
+#include "FileComparators/crc32_file_comparator.h"
+#include "FileComparators/md5_file_comparator.h"
 #include "duplicate_search_exceptions.h"
 #include "duplicate_searcher.h"
 
@@ -66,13 +68,26 @@ void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::unordere
 	  }
 	}
 }
+
+void DuplicateSearcher::setFileComparator(const std::string& str_file_comparator)
+{
+	static std::map<std::string, IFileComparator*> file_comparators
+	{
+		{ "md5", new MD5FileComparator},
+		{ "crc32", new CRC32FileComparator}
+	};
+	const auto file_comparator = file_comparators.find(str_file_comparator);
+	if( file_comparator == file_comparators.end())
+		throw NoHashAlgorithmException();
+	m_FileComparator = file_comparator->second;
+}
+
 void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
 									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
 {
 	if( !exists( dir_path ) )
 		return;
 	size_t curr_scan_level = 0;
-	const auto search_file_size = fs::file_size( search_file_path );
 	fs::directory_iterator end_itr;
 	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
 	{
@@ -90,11 +105,13 @@ void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
 			const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
 			if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
 				continue;
-			const auto cur_file_size = fs::file_size( itr->path() );
-			if( cur_file_size <= m_MinFileSize || cur_file_size != search_file_size )
+			if( fs::file_size( itr->path() ) <= m_MinFileSize )
 				continue;
-			duplicate_files.push_back(itr->path());
-			cur_scan_file->second = true;
+			if( m_FileComparator->operator()( search_file_path, itr->path() ) )
+			{
+				duplicate_files.push_back(itr->path());
+				cur_scan_file->second = true;
+			}
 		}
 	}
 }
@@ -156,8 +173,11 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 				("file-block-size,b",  po::value<size_t>()->default_value(5),
 				 "Size of the block that reads files")
 
-				("hash-algorithm,a", po::value<std::string>()->default_value("md5"),
-				 "One of the available hashing algorithms (crc32, md5)");
+				("hash-algorithm,a", po::value<std::string>()->default_value("md5")->notifier(
+					 [this](const std::string& str_file_comparator)
+				{
+				 this->setFileComparator(str_file_comparator);
+				}), "One of the available hashing algorithms (crc32, md5)");
 
 		po::variables_map variables_map;
 		po::store(parse_command_line(argc, argv, description), variables_map);
