@@ -14,7 +14,7 @@ public:
         m_FileBlockSize = file_block_size;
     }
 
-private:
+protected:
     size_t m_FileBlockSize;
 };
 #endif // FILECOMPARATOR_H

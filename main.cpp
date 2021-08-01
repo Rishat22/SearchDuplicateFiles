@@ -1,7 +1,6 @@
 #include <iostream>
 #include "duplicate_searcher.h"
 
-
 int main(int argc, const char *argv[])
 {
 	DuplicateSearcher duplicate_searcher;
