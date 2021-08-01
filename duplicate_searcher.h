@@ -2,11 +2,18 @@
 #define DUPLICATESEARCHER_H
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include "boost/filesystem.hpp"
 #include "FileComparators/ifile_comparator.h"
 
 namespace fs = boost::filesystem;
+
+struct ScannedFile
+{
+    ScannedFile(const fs::path file_path) : filePath(file_path), isPassed(false) {}
+    fs::path filePath;
+    bool isPassed;
+};
 
 class DuplicateSearcher
 {
@@ -24,15 +31,14 @@ public:
     void setFileBlockSize(const size_t file_block_size);
 
 private:
-    void findDuplicate(const fs::path & dir_path
-                       , const fs::path& search_file_path
+    void findDuplicate(const fs::path& search_file_path
                        , std::vector<fs::path>& duplicate_files);
-    void getAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files);
+    void getAllScanFiles(const fs::path & dir_path, std::vector<ScannedFile>& all_scan_files);
 private:
     std::vector<fs::path> m_ScanDirs;
     std::vector<fs::path> m_ExludeScanDirs;
     std::vector<std::vector<fs::path>> m_DuplicateFiles;
-    std::unordered_map<std::string, bool> m_AllScanFiles;
+    std::vector<ScannedFile> m_AllScanFiles;
     IFileComparator* m_FileComparator;
     size_t m_FileBlockSize;
     size_t m_ScanLevel;

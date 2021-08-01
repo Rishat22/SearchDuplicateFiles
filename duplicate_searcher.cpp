@@ -26,14 +26,14 @@ bool DuplicateSearcher::scan()
 			getAllScanFiles(scan_dir, m_AllScanFiles);
 			for(auto& file : m_AllScanFiles)
 			{
-				if(file.second == false)
+				if(file.isPassed == false)
 				{
-					file.second = true;
+					file.isPassed = true;
 					std::vector<fs::path> duplicate_files;
-					findDuplicate( scan_dir, file.first, duplicate_files );
+					findDuplicate( file.filePath, duplicate_files );
 					if( !duplicate_files.empty() )
 					{
-						duplicate_files.push_back(file.first);
+						duplicate_files.push_back(file.filePath);
 						m_DuplicateFiles.emplace_back(duplicate_files);
 					}
 
@@ -50,8 +50,10 @@ bool DuplicateSearcher::scan()
 	return true;
 }
 
-void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::unordered_map<std::string, bool>& all_scan_files)
+void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::vector<ScannedFile>& all_scan_files)
 {
+	if( !exists( dir_path ) )
+		return;
 	size_t curr_scan_level = 0;
 	fs::directory_iterator end_itr;
 	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
@@ -68,42 +70,22 @@ void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::unordere
 	  {
 		  if( fs::file_size( itr->path() ) <= m_MinFileSize )
 			  continue;
-		  all_scan_files[itr->path().c_str()] = false;
+		  all_scan_files.emplace_back(itr->path().c_str());
 	  }
 	}
 }
 
 
-void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
-									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
+void DuplicateSearcher::findDuplicate(const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
 {
-	if( !exists( dir_path ) )
-		return;
-	size_t curr_scan_level = 0;
-	fs::directory_iterator end_itr;
-	for( fs::directory_iterator itr( dir_path ); itr != end_itr; ++itr )
+	for(auto& file : m_AllScanFiles)
 	{
-		const auto& cur_path = itr->path();
-		if( is_directory(itr->status()) )
+		if( file.isPassed )
+			continue;
+		if( m_FileComparator->operator()( search_file_path, file.filePath ) )
 		{
-			if(curr_scan_level++ >= m_ScanLevel)
-				continue;
-			if(std::find(m_ExludeScanDirs.begin(), m_ExludeScanDirs.end(), itr->path()) != m_ExludeScanDirs.end())
-				continue;
-			findDuplicate( cur_path, search_file_path, duplicate_files );
-		}
-		else
-		{
-			const auto cur_scan_file = m_AllScanFiles.find(itr->path().c_str());
-			if( cur_scan_file == m_AllScanFiles.end() || cur_scan_file->second == true)
-				continue;
-			if( fs::file_size( itr->path() ) <= m_MinFileSize )
-				continue;
-			if( m_FileComparator->operator()( search_file_path, itr->path() ) )
-			{
-				duplicate_files.push_back(itr->path());
-				cur_scan_file->second = true;
-			}
+			duplicate_files.push_back(file.filePath);
+			file.isPassed = true;
 		}
 	}
 }
