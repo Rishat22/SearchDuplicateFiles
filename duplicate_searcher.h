@@ -21,6 +21,7 @@ public:
     void setMinFileSize(const size_t min_file_size);
     void setParamsFromCmdLineArgs(int argc, const char *argv[]);
     void setFileComparator(const std::string& file_comparator);
+    void setFileBlockSize(const size_t file_block_size);
 
 private:
     void findDuplicate(const fs::path & dir_path
@@ -33,6 +34,7 @@ private:
     std::vector<std::vector<fs::path>> m_DuplicateFiles;
     std::unordered_map<std::string, bool> m_AllScanFiles;
     IFileComparator* m_FileComparator;
+    size_t m_FileBlockSize;
     size_t m_ScanLevel;
     size_t m_MinFileSize;
 

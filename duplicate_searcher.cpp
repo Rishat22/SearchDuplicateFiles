@@ -8,6 +8,10 @@
 namespace po = boost::program_options;
 
 DuplicateSearcher::DuplicateSearcher()
+	: m_FileComparator(nullptr)
+	, m_FileBlockSize(5)
+	, m_ScanLevel(0)
+	, m_MinFileSize(1)
 {
 
 }
@@ -69,18 +73,6 @@ void DuplicateSearcher::getAllScanFiles(const fs::path & dir_path, std::unordere
 	}
 }
 
-void DuplicateSearcher::setFileComparator(const std::string& str_file_comparator)
-{
-	static std::map<std::string, IFileComparator*> file_comparators
-	{
-		{ "md5", new MD5FileComparator},
-		{ "crc32", new CRC32FileComparator}
-	};
-	const auto file_comparator = file_comparators.find(str_file_comparator);
-	if( file_comparator == file_comparators.end())
-		throw NoHashAlgorithmException();
-	m_FileComparator = file_comparator->second;
-}
 
 void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
 									   const fs::path& search_file_path, std::vector<fs::path>& duplicate_files)
@@ -114,6 +106,25 @@ void DuplicateSearcher::findDuplicate( const fs::path& dir_path,
 			}
 		}
 	}
+}
+
+void DuplicateSearcher::setFileComparator(const std::string& str_file_comparator)
+{
+	static std::map<std::string, IFileComparator*> file_comparators
+	{
+		{ "md5", new MD5FileComparator},
+		{ "crc32", new CRC32FileComparator}
+	};
+	const auto file_comparator = file_comparators.find(str_file_comparator);
+	if( file_comparator == file_comparators.end())
+		throw NoHashAlgorithmException();
+	m_FileComparator = file_comparator->second;
+	m_FileComparator->setFileBlockSize(m_FileBlockSize);
+}
+
+void DuplicateSearcher::setFileBlockSize(const size_t file_block_size)
+{
+	m_FileBlockSize = file_block_size;
 }
 
 void DuplicateSearcher::addScanDir(const std::string& scan_dir)
@@ -170,8 +181,11 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 
 				("file-masks,m", "Masks of file names allowed for comparison (case-independent)")
 
-				("file-block-size,b",  po::value<size_t>()->default_value(5),
-				 "Size of the block that reads files")
+				("file-block-size,b",  po::value<size_t>()->default_value(5)->notifier(
+					 [this](const size_t file_block_size)
+				{
+				 this->setFileBlockSize(file_block_size);
+				}), "Size of the block that reads files")
 
 				("hash-algorithm,a", po::value<std::string>()->default_value("md5")->notifier(
 					 [this](const std::string& str_file_comparator)
