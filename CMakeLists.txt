@@ -19,34 +19,34 @@ set(project_sources
     main.cpp
     )
 
-add_executable(SearchDuplicateFiles ${project_sources} )
+add_executable(bayan ${project_sources} )
 
-target_link_libraries(SearchDuplicateFiles
+target_link_libraries(bayan
     ${Boost_LIBRARIES}
 )
 
-target_include_directories(SearchDuplicateFiles
+target_include_directories(bayan
     PUBLIC "${CMAKE_BINARY_DIR}"
 )
 
 if (MSVC)
-    target_compile_options(SearchDuplicateFiles PRIVATE
+    target_compile_options(bayan PRIVATE
         /W4
     )
 else ()
-    target_compile_options(SearchDuplicateFiles PRIVATE
+    target_compile_options(bayan PRIVATE
         -Wall -Wextra -pedantic -Werror
     )
 endif()
 
-install(TARGETS SearchDuplicateFiles RUNTIME DESTINATION bin)
+install(TARGETS bayan RUNTIME DESTINATION bin)
 
 set(CPACK_GENERATOR DEB)
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
-set_target_properties(SearchDuplicateFiles PROPERTIES
+set_target_properties(bayan PROPERTIES
         COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK)
 set(CPACK_PACKAGE_CONTACT example@example.com)
 
