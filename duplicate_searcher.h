@@ -27,13 +27,14 @@ public:
     void setScanLevel(const size_t scan_level);
     void setMinFileSize(const size_t min_file_size);
 	bool setParamsFromCmdLineArgs(int argc, const char *argv[]);
-    void setFileComparator(const std::string& file_comparator);
+	void setupFileComparator(const std::string& file_comparator);
     void setFileBlockSize(const size_t file_block_size);
 
 private:
     void findDuplicate(const fs::path& search_file_path
                        , std::vector<fs::path>& duplicate_files);
     void getAllScanFiles(const fs::path & dir_path, std::vector<ScannedFile>& all_scan_files);
+	bool fillParamsFromCmdLineArgs(int argc, const char *argv[]);
 private:
     std::vector<fs::path> m_ScanDirs;
     std::vector<fs::path> m_ExludeScanDirs;

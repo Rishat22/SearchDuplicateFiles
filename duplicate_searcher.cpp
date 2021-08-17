@@ -92,7 +92,7 @@ void DuplicateSearcher::findDuplicate(const fs::path& search_file_path, std::vec
 	}
 }
 
-void DuplicateSearcher::setFileComparator(const std::string& str_file_comparator)
+void DuplicateSearcher::setupFileComparator(const std::string& str_file_comparator)
 {
 	static std::map<std::string, std::shared_ptr<IFileComparator>> file_comparators
 	{
@@ -134,61 +134,67 @@ void DuplicateSearcher::setMinFileSize(const size_t min_file_size)
 bool DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 {
 	try {
-		po::options_description description{"Options"};
-		description.add_options()
-				("help,h", "Getting more information about command line parameters")
-				("dirs,d", po::value<std::vector<std::string>>()->notifier(
-						[this](const std::vector<std::string>& scan_dirs)
-				{
-					for(const auto& dir : scan_dirs)
-						this->addScanDir(dir);
-				}), "Directories to scan (there may be several)")
-
-				("exclude-dirs,e", po::value<std::vector<std::string>>()->notifier(
-					 [this](const std::vector<std::string>& scan_exclude_dirs)
-				{
-				 for(const auto& dir : scan_exclude_dirs)
-					 this->addExcludeScanDir(dir);
-				}), "Directories to exclude from scanning (there may be several)")
-
-				("scan-level,l",  po::value<size_t>()->default_value(0)->notifier(
-					 [this](const size_t scan_level)
-				{
-				 this->setScanLevel(scan_level);
-				}), "Scan level (one for all directories, 0 - only the specified directory)")
-
-				("min-file-size,s",  po::value<size_t>()->default_value(1)->notifier(
-					 [this](const size_t min_file_size)
-				{
-				 this->setMinFileSize(min_file_size);
-				}), "Min file size, by default, all files larger than 1 byte are checked")
-
-				("file-masks,m", "Masks of file names allowed for comparison (case-independent)")
-
-				("file-block-size,b",  po::value<size_t>()->default_value(5)->notifier(
-					 [this](const size_t file_block_size)
-				{
-				 this->setFileBlockSize(file_block_size);
-				}), "Size of the block that reads files")
-
-				("hash-algorithm,a", po::value<std::string>()->default_value("md5")->notifier(
-					 [this](const std::string& str_file_comparator)
-				{
-				 this->setFileComparator(str_file_comparator);
-				}), "One of the available hashing algorithms (crc32, md5)");
-
-		po::variables_map variables_map;
-		po::store(parse_command_line(argc, argv, description), variables_map);
-		po::notify(variables_map);
-
-		if (variables_map.count("help"))
-		{
-			std::cout << description << '\n';
-			return false;
-		}
+		fillParamsFromCmdLineArgs(argc, argv);
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool DuplicateSearcher::fillParamsFromCmdLineArgs(int argc, const char* argv[])
+{
+	po::options_description description{"Options"};
+	description.add_options()
+			("help,h", "Getting more information about command line parameters")
+			("dirs,d", po::value<std::vector<std::string>>()->notifier(
+					[this](const std::vector<std::string>& scan_dirs)
+			{
+				for(const auto& dir : scan_dirs)
+					this->addScanDir(dir);
+			}), "Directories to scan (there may be several)")
+
+			("exclude-dirs,e", po::value<std::vector<std::string>>()->notifier(
+				 [this](const std::vector<std::string>& scan_exclude_dirs)
+			{
+			 for(const auto& dir : scan_exclude_dirs)
+				 this->addExcludeScanDir(dir);
+			}), "Directories to exclude from scanning (there may be several)")
+
+			("scan-level,l",  po::value<size_t>()->default_value(0)->notifier(
+				 [this](const size_t scan_level)
+			{
+			 this->setScanLevel(scan_level);
+			}), "Scan level (one for all directories, 0 - only the specified directory)")
+
+			("min-file-size,s",  po::value<size_t>()->default_value(1)->notifier(
+				 [this](const size_t min_file_size)
+			{
+			 this->setMinFileSize(min_file_size);
+			}), "Min file size, by default, all files larger than 1 byte are checked")
+
+			("file-masks,m", "Masks of file names allowed for comparison (case-independent)")
+
+			("file-block-size,b",  po::value<size_t>()->default_value(5)->notifier(
+				 [this](const size_t file_block_size)
+			{
+			 this->setFileBlockSize(file_block_size);
+			}), "Size of the block that reads files")
+
+			("hash-algorithm,a", po::value<std::string>()->default_value("md5")->notifier(
+				 [this](const std::string& str_file_comparator)
+			{
+			 this->setupFileComparator(str_file_comparator);
+			}), "One of the available hashing algorithms (crc32, md5)");
+
+	po::variables_map variables_map;
+	po::store(parse_command_line(argc, argv, description), variables_map);
+	po::notify(variables_map);
+
+	if (variables_map.count("help"))
+	{
+		std::cout << description << '\n';
 		return false;
 	}
 	return true;
