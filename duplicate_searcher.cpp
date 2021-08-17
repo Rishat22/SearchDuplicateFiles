@@ -2,13 +2,15 @@
 #include <boost/program_options.hpp>
 #include "FileComparators/crc32_file_comparator.h"
 #include "FileComparators/md5_file_comparator.h"
+#include "FileComparators/md5_file_comparator.h"
+#include "FileComparators/empty_file_comparator.h"
 #include "duplicate_search_exceptions.h"
 #include "duplicate_searcher.h"
 
 namespace po = boost::program_options;
 
 DuplicateSearcher::DuplicateSearcher()
-	: m_FileComparator(nullptr)
+	: m_FileComparator(new EmptyFileComparator)
 	, m_FileBlockSize(5)
 	, m_ScanLevel(0)
 	, m_MinFileSize(1)
@@ -92,10 +94,10 @@ void DuplicateSearcher::findDuplicate(const fs::path& search_file_path, std::vec
 
 void DuplicateSearcher::setFileComparator(const std::string& str_file_comparator)
 {
-	static std::map<std::string, IFileComparator*> file_comparators
+	static std::map<std::string, std::shared_ptr<IFileComparator>> file_comparators
 	{
-		{ "md5", new MD5FileComparator},
-		{ "crc32", new CRC32FileComparator}
+		{ "md5",  std::make_shared<MD5FileComparator>()},
+		{ "crc32", std::make_shared<CRC32FileComparator>()}
 	};
 	const auto file_comparator = file_comparators.find(str_file_comparator);
 	if( file_comparator == file_comparators.end())
@@ -129,7 +131,7 @@ void DuplicateSearcher::setMinFileSize(const size_t min_file_size)
 	m_MinFileSize = min_file_size;
 }
 
-void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
+bool DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 {
 	try {
 		po::options_description description{"Options"};
@@ -180,11 +182,16 @@ void DuplicateSearcher::setParamsFromCmdLineArgs(int argc, const char* argv[])
 		po::notify(variables_map);
 
 		if (variables_map.count("help"))
+		{
 			std::cout << description << '\n';
+			return false;
+		}
 	}
 	catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
+		return false;
 	}
+	return true;
 }
 
 std::vector<std::vector<fs::path> > DuplicateSearcher::duplicateFiles() const

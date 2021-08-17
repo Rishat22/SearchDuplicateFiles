@@ -11,7 +11,7 @@ class CRC32FileComparator : public IFileComparator
 {
 public:
     bool operator()(const fs::path& first_file,
-                    const fs::path& second_file);
+					const fs::path& second_file) override;
 };
 
 #endif // CRC32HASHFUNCTION_H

@@ -20,13 +20,13 @@ class DuplicateSearcher
 public:
     DuplicateSearcher();
     bool scan();
-    std::vector<std::vector<fs::path> > duplicateFiles() const;
+	std::vector<std::vector<fs::path> > duplicateFiles() const;
 
     void addScanDir(const std::string& scan_dir);
     void addExcludeScanDir(const std::string& scan_exclude_dir);
     void setScanLevel(const size_t scan_level);
     void setMinFileSize(const size_t min_file_size);
-    void setParamsFromCmdLineArgs(int argc, const char *argv[]);
+	bool setParamsFromCmdLineArgs(int argc, const char *argv[]);
     void setFileComparator(const std::string& file_comparator);
     void setFileBlockSize(const size_t file_block_size);
 
@@ -39,7 +39,7 @@ private:
     std::vector<fs::path> m_ExludeScanDirs;
     std::vector<std::vector<fs::path>> m_DuplicateFiles;
     std::vector<ScannedFile> m_AllScanFiles;
-    IFileComparator* m_FileComparator;
+	std::shared_ptr<IFileComparator> m_FileComparator;
     size_t m_FileBlockSize;
     size_t m_ScanLevel;
     size_t m_MinFileSize;

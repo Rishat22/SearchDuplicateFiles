@@ -9,7 +9,7 @@ class MD5FileComparator : public IFileComparator
 {
 public:
     bool operator()(const fs::path& first_file,
-                    const fs::path& second_file);
+					const fs::path& second_file) override;
 };
 
 struct MD5HashFunction {
