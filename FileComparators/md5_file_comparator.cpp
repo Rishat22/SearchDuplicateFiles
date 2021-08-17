@@ -6,32 +6,14 @@
 
 using FileHash = std::unordered_set<std::string, MD5HashFunction>;
 
-void getFileHash(FileHash& file_hash, const size_t file_block_size, const boost::filesystem::path& file_path)
-{
-	std::string line;
-	std::ifstream myfile (file_path.c_str());
-	if (myfile.is_open())
-	{
-		auto buffer = new char [file_block_size + 1];
-		while ( myfile.good() )
-		{
-			myfile.read(buffer, file_block_size);
-			buffer[file_block_size] = '\0';
-			file_hash.insert(buffer);
-		}
-		delete[] buffer;
-		myfile.close();
-	}
-}
-
 bool MD5FileComparator::operator()(const boost::filesystem::path& first_file, const boost::filesystem::path& second_file)
 {
 	if ( fs::file_size( first_file ) == fs::file_size( second_file ) )
 	{
 		FileHash first_file_hash;
-		getFileHash(first_file_hash, m_FileBlockSize, first_file);
+		getFileHash<FileHash>(first_file_hash, m_FileBlockSize, first_file);
 		FileHash second_file_hash;
-		getFileHash(second_file_hash, m_FileBlockSize, first_file);
+		getFileHash<FileHash>(second_file_hash, m_FileBlockSize, first_file);
 
 		return first_file_hash == second_file_hash;
 	}
